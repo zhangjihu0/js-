@@ -1,0 +1,86 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>Document</title>
+        <style type="text/css">
+            *{
+                margin: 0;
+                padding: 0;
+            }
+            html,body{
+                width:100%;
+                height:100%;
+                overflow:hidden;
+            }
+            body{
+                cursor: pointer;
+                background: lightblue;
+
+            }
+        </style>
+    </head>
+    <body>
+        <script>
+            //颗粒化函数思想其实就是js中的预处理思想
+            // bind:把传递进来的callback预先处理为context
+            //利用函数执行可以形成一个不销毁的私有作用域把需要预先处理的内容都保存在这个不销毁的作用域中，并且返回一个小函数
+            //我们以后执行小函数在小函数中把预先存储的值进行相关的处理
+            var obj = {name:'231'}
+            function fn(num1,num2){
+                console.log(this,num1,num2);
+            }
+            // window.setTimeout(fn,0);//fn中的this时window
+            window.setTimeout(fn.call(obj),0);//fn.call(obj)无返回值所以
+            //相当于window.setTimeout(undefined,0);
+            window.setTimeout(fn.bind(obj),0);//bind 只是改变this指向但并不执行，等定时器到达时间后执行
+            //bind在IE6、7、8下不支持；
+
+            //bind:把传递进来的callback预先处理为context
+            function mybind(callBack,context){
+                context=context||window;
+                var outerArg = Array.prototype.slice.call(arguments,2)
+                return function(e){
+                    callBack.apply(context,outerArg)
+                }
+            }
+            window.setTimeout(mybind(fn,obj),1000);
+            //给指定的定时器绑定一个方法，当定时器到达时间的时候，fn执行并且让fn中的this变为obj
+            function fn(num1,num2){
+                console.log(this,num1,num2);
+            }
+            function bind(callBack,context){//同时也实现了ie678的兼容
+                var outerArg = Array.prototype.slice.call(arguments,2);
+                return function(e){//真正点击执行的函数
+                    var innerArg = Array.prototype.slice(arguments,0);//鼠标点击事件对象参数
+                    callBack.apply(context,outerArg.concat(innerArg));
+                }
+            }
+            Function.prototype.mybind = function myBind(){//实现在原型上的添加，以后可以在原型上直接使用。
+                //this=>fn
+                if("bind" in Function.prototype){
+                    
+                    return this.bind(this,[context].context(outerArg));//即[obj,100,200];
+                }
+                var _this = this;
+                var outerArg = Array.prototype.slice.call(arguments,1);
+                return function(){
+                    var innerArg = Array.prototype.slice.call(arguments,0)
+                    innerArg.length ===0?innerArg[innerArg.length]=window.event:null
+                    var arg = outerArg.concat(innerArg);
+                    _this.apply(context,arg)
+                }
+            }
+            document.body.onclick = function(){
+                //bind
+                //除了预先处理this和需要手动传参值以外，把浏览器默认给传递的鼠标鼠标事件事件也进行预先处理了
+                //给元素绑定方法，当行为触发的时候，执行的对应方法中的this就是当前的元素本身；
+                //而且浏览器还会给当前的方法默认的传递一个参数值：MouseEvent(鼠标事件对象)但在IE678下并没有这个值
+                console.log(arguments);
+            }
+
+        </script>
+    </body>
+    </html>
